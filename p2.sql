@@ -21,8 +21,53 @@ add column full_text_idx tsvector generated always as (
 create index idx_full_text_gin on film using gin (full_text_idx);
 
 explain analyze
-select title, description from film where full_text @@ to_tsquery('english', 'Man & Woman');
+select
+  title, description
+from
+  film
+where
+  full_text @@ to_tsquery('english', 'Man & Woman');
+
 explain analyze
-select title, description from film where full_text_idx @@ to_tsquery('english', 'Man & Woman');
+select
+  title, description
+from
+  film
+where
+  full_text_idx @@ to_tsquery('english', 'Man & Woman');
+
+explain analyze
+with q as (
+  select to_tsquery('english', 'Man & Woman') as query
+)
+select
+  title, description, ts_rank(full_text, q.query) as "rank"
+from
+  film
+cross join
+  q
+where
+  full_text @@ q.query
+order by
+  "rank" desc
+limit
+  10;
+
+explain analyze
+with q as (
+  select to_tsquery('english', 'Man & Woman') as query
+)
+select
+  title, description, ts_rank(full_text_idx, q.query) as "rank"
+from
+  film
+cross join
+  q
+where
+  full_text_idx @@ q.query
+order by
+  "rank" desc
+limit
+  10;
 
 rollback;
