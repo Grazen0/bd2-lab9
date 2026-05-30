@@ -77,4 +77,27 @@ order by
 limit
   10;
 
+with q as (
+  select to_tsquery('english', 'Man & Woman') as query
+)
+select (
+(select
+  array_agg(id order by ts_rank(full_text_gin, q.query))
+from
+  articles
+cross join
+  q
+where
+  full_text_gin @@ q.query)
+=
+(select
+  array_agg(id order by ts_rank(full_text_gist, q.query))
+from
+  articles
+cross join
+  q
+where
+  full_text_gist @@ q.query)
+) as are_equal;
+
 rollback;
